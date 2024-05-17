@@ -37,18 +37,18 @@ dogs.post('/dogs', async (req, res) => {
         weight_max,
         life_span,
         temperament,
-        image,
+        imagen,
     } = req.body;
     
-    if(!image){
+    if(!imagen){
         try {
-            image = await (await axios.get('https://dog.ceo/api/breeds/image/random')).data.message;
+            imagen = await (await axios.get('https://dog.ceo/api/breeds/image/random')).data.message;
         } catch (error) {
             console.log(error)
         }
     }
 
-    if (name && height_min && height_max && weight_min && weight_max && temperament && image) {
+    if (name && height_min && height_max && weight_min && weight_max && temperament && imagen) {
         // takes that data for the new dog  
         const createDog = await Dog.create({
             name: name,
@@ -57,15 +57,16 @@ dogs.post('/dogs', async (req, res) => {
             weight_min: parseInt(weight_min),
             weight_max: parseInt(weight_max),
             life_span: life_span,
-            image: image || 'https://dog.ceo/api/breeds/image/random',
+            imagen: imagen || 'https://dog.ceo/api/breeds/image/random',
         });
-        temperament.map(async el => {
-            const findTemp = await Temperament.findAll({
-                where: { name: el }
-            });
-            createDog.addTemperament(findTemp);
-        })
+        if (typeof temperament === 'string') {
+          temperament=  temperament.split(',').map(async (el)=> {
+                let  findTemp = await Temperament.findAll({ where: { name: el }  });
+                  await  createDog.addTemperament(findTemp)
+                })
+        }      
         res.status(200).send(createDog);
+       console.log("Dog created succesfull");
     } else {
         res.status(404).send('Data needed to proceed is missing');
     }
